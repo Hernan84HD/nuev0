@@ -40,8 +40,8 @@
             background-color: #ff6347;
             color: white;
             border: none;
-            padding: 15px;
-            font-size: 24px;
+            padding: 45px;
+            font-size: 72px;
             border-radius: 10px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
             margin: 5px;
@@ -110,7 +110,7 @@
         }
         initializeEnemies();
 
-        document.addEventListener("keydown", handleKeyPress, { once: true });
+        document.addEventListener("keydown", handleKeyPress);
 
         function handleKeyPress(e) {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -266,3 +266,4 @@
     </script>
 </body>
 </html>
+
