@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Juego Estilo Snake con Enemigos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Press Start 2P', cursive;
+        }
+        canvas {
+            background: linear-gradient(135deg, #87CEEB, #f0f0f0);
+            display: block;
+            margin: 20px auto;
+            border: 10px solid #333;
+            border-radius: 15px;
+            box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.7);
+        }
+        .info-panel {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .info-panel h1 {
+            color: #ff4500;
+        }
+        .info-panel h3 {
+            color: #ff6347;
+            background: #333;
+            display: inline-block;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.5);
+            color: #fff;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .controls button {
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 24px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <h1>ATAQUE DE LOS ORCOS</h1>
+        <h3>Nivel de Dificultad: <span id="difficulty">1</span> | Vidas: <span id="lives">5</span></h3>
+    </div>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+    <div class="controls">
+        <button onclick="movePlayerMobile('ArrowUp')">▲</button><br>
+        <button onclick="movePlayerMobile('ArrowLeft')">◀</button>
+        <button onclick="movePlayerMobile('ArrowDown')">▼</button>
+        <button onclick="movePlayerMobile('ArrowRight')">▶</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const difficultyElement = document.getElementById("difficulty");
+        const livesElement = document.getElementById("lives");
+
+        const tileSize = 20;
+        const characterSizeMultiplier = 2;
+        const rows = Math.floor(canvas.height / tileSize);
+        const cols = Math.floor(canvas.width / tileSize);
+
+        let player = { x: cols - 1, y: rows - 1 };
+        let door = { x: 0, y: 0, width: 6, height: 2 };
+        let enemies = [];
+        let lives = 5;
+        let difficulty = 1;
+
+        const playerImage = new Image();
+        playerImage.src = 'img/fran.png';
+
+        const enemyImages = [
+            'img/comunismo.png',
+            'img/la campora.png',
+            'img/lgtb.png',
+            'img/palestina.png',
+            'img/PJ.png',
+            'img/pts.png',
+            'img/ucr.png',
+            'img/abuelas.png',
+            'img/feminazi.png',
+            'img/panueloVerde.png',
+            'img/c5n.png',
+            'img/union.png'
+        ].map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+        });
+        
+        function initializeEnemies() {
+            let numberOfEnemies = difficulty;
+            enemies = [];
+            for (let i = 0; i < numberOfEnemies; i++) {
+                enemies.push({ x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows), imageIndex: i % enemyImages.length });
+            }
+        }
+        initializeEnemies();
+
+        document.addEventListener("keydown", handleKeyPress, { once: true });
+
+        function handleKeyPress(e) {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                movePlayer(e);
+                document.addEventListener("keydown", handleKeyPress, { once: true });
+            }
+        }
+
+        function movePlayer(e) {
+            switch (e.key) {
+                case "ArrowUp":
+                    if (player.y > 0) player.y--;
+                    break;
+                case "ArrowDown":
+                    if (player.y < rows - characterSizeMultiplier) player.y++;
+                    break;
+                case "ArrowLeft":
+                    if (player.x > 0) player.x--;
+                    break;
+                case "ArrowRight":
+                    if (player.x < cols - characterSizeMultiplier) player.x++;
+                    break;
+            }
+            updateGame();
+        }
+
+        function movePlayerMobile(direction) {
+            movePlayer({ key: direction });
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer(player);
+            drawDoor();
+
+            enemies.forEach(enemy => {
+                moveEnemy(enemy);
+                drawEnemy(enemy);
+            });
+
+            checkCollision();
+            difficultyElement.textContent = difficulty;
+            livesElement.textContent = lives;
+        }
+
+        function drawPlayer(player) {
+            if (playerImage.complete) {
+                ctx.drawImage(playerImage, player.x * tileSize, player.y * tileSize, tileSize * characterSizeMultiplier, tileSize * characterSizeMultiplier);
+            } else {
+                ctx.fillStyle = "#0000FF";
+                ctx.fillRect(player.x * tileSize, player.y * tileSize, tileSize * characterSizeMultiplier, tileSize * characterSizeMultiplier);
+            }
+        }
+
+        function drawEnemy(enemy) {
+            if (enemyImages[enemy.imageIndex].complete) {
+                ctx.drawImage(enemyImages[enemy.imageIndex], enemy.x * tileSize, enemy.y * tileSize, tileSize * characterSizeMultiplier, tileSize * characterSizeMultiplier);
+            } else {
+                ctx.fillStyle = "#FF4500";
+                ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize * characterSizeMultiplier, tileSize * characterSizeMultiplier);
+            }
+        }
+
+        function drawDoor() {
+            ctx.fillStyle = "#00b894";
+            ctx.fillRect(door.x * tileSize, door.y * tileSize, door.width * tileSize, door.height * tileSize);
+            ctx.strokeStyle = "#006600";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(door.x * tileSize, door.y * tileSize, door.width * tileSize, door.height * tileSize);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "12px 'Press Start 2P', cursive";
+            ctx.fillText("PIZZERIA", (door.x * tileSize) + (tileSize * door.width) / 6, (door.y * tileSize) + (tileSize * door.height) / 1.4);
+        }
+
+        function moveEnemy(enemy) {
+            if (Math.random() < 0.5 + (enemy.speedMultiplier || 0)) {
+                let dx = player.x - enemy.x;
+                let dy = player.y - enemy.y;
+
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    enemy.x += dx > 0 ? 1 : -1;
+                } else {
+                    enemy.y += dy > 0 ? 1 : -1;
+                }
+            }
+        }
+
+        function checkCollision() {
+            enemies.forEach(enemy => {
+                if (enemy.x === player.x && enemy.y === player.y) {
+                    lives--;
+                    Swal.fire({
+                        icon: 'error',
+                        title: '¡Oh no!',
+                        text: 'Te atraparon los orcos!',
+                        confirmButtonText: 'Continuar'
+                    });
+                    if (lives <= 0) {
+                        ctx.font = "24px 'Press Start 2P', cursive";
+                        ctx.fillStyle = "red";
+                        ctx.fillText("GAME OVER", canvas.width / 2 - 200, canvas.height / 2 - 20);
+                        ctx.fillText("Nivel alcanzado: " + difficulty, canvas.width / 2 - 230, canvas.height / 2 + 20);
+                        setTimeout(() => {
+                            Swal.fire({
+                                title: '¿Jugar otra vez?',
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí',
+                                cancelButtonText: 'No'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    lives = 5;
+                                    difficulty = 1;
+                                    initializeEnemies();
+                                    updateGame();
+                                    resetGame();
+                                } else {
+                                    Swal.fire({
+                                        title: 'Gracias por jugar!',
+                                        icon: 'info',
+                                        confirmButtonText: 'Cerrar'
+                                    });
+                                }
+                            });
+                        }, 1000);
+                    } else {
+                        resetGame();
+                    }
+                }
+            });
+
+            if (
+                player.x >= door.x && player.x < door.x + door.width &&
+                player.y >= door.y && player.y < door.y + door.height
+            ) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Bien hecho!',
+                    text: 'Has llegado a la pizzería a salvo!',
+                    confirmButtonText: 'Continuar'
+                });
+                difficulty++;
+                initializeEnemies();
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            player = { x: cols - 1, y: rows - 1 };
+            initializeEnemies();
+            updateGame();
+        }
+    </script>
+</body>
+</html>
